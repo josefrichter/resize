@@ -3,39 +3,36 @@
   <input type="submit" value="Upload &rarr;">
 </form>
 
-<div id="uploadprogress"></div>
 <div id="preview"></div>
-<!-- <canvas id="canvas" width="400" height="400"></canvas> -->
 
 <script type="text/javascript" charset="utf-8">
 
       var preview = document.getElementById('preview');
-      var progress = document.getElementById('uploadprogress');
       var fileinput = document.getElementById('fileinput');
       var canvas = document.getElementById('canvas');
+      var formData = new FormData();
       
-      function previewfile(file) {
+      function processfile(file) {
           var reader = new FileReader();
           reader.onload = function (event) {
             var image = new Image();
             image.src = event.target.result;
-            //image.width = 150; // a fake resize
-            preview.appendChild(image);
-            resizeMe(image);
+            //preview.appendChild(image); // preview commented out, I am using the canvas instead
+            // I need the image object from reader into the canvas
+            resized = resizeMe(image); // TODO add this to formData
+            formData.append('file', resized);
           };
 
-          reader.readAsDataURL(file);
-          
+          reader.readAsDataURL(file); // I am actually not using this at all now
       }
   
       function readfiles(files) {
-          //console.log(files);
-          var formData = new FormData();
+          
           for (var i = 0; i < files.length; i++) {
-            formData.append('file', files[i]);
-            previewfile(files[i]);
+            processfile(files[i]);
+            //formData.append('file', files[i]);
           }
-
+          console.log(formData); // FIXME empty :-P
       }
       
       fileinput.onchange = function(){
@@ -72,7 +69,9 @@
         var ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
         
-        preview.appendChild(canvas);
+        preview.appendChild(canvas); // do the actual resized preview
+        
+        return canvas.toDataURL("image/jpg");
 
       }
       
