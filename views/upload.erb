@@ -1,6 +1,41 @@
-
-
 <form action="submit" method="post" accept-charset="utf-8" enctype="multipart/form-data">
   <input id="fileinput" type="file" name="file[]" multiple/>
   <input type="submit" value="Upload &rarr;">
 </form>
+
+<div id="uploadprogress"></div>
+<div id="holder"></div>
+
+<script type="text/javascript" charset="utf-8">
+
+      var holder = document.getElementById('holder');
+      var progress = document.getElementById('uploadprogress');
+      var fileupload = document.getElementById('upload');
+      var fileinput = document.getElementById('fileinput');
+      
+      function previewfile(file) {
+          var reader = new FileReader();
+          reader.onload = function (event) {
+            var image = new Image();
+            image.src = event.target.result;
+            image.width = 250; // a fake resize
+            holder.appendChild(image);
+          };
+
+          reader.readAsDataURL(file);
+      }
+  
+      function readfiles(files) {
+          console.log(files);
+          var formData = new FormData();
+          for (var i = 0; i < files.length; i++) {
+            formData.append('file', files[i]);
+            previewfile(files[i]);
+          }
+
+      }
+      
+      fileinput.onchange = function(){readfiles(fileinput.files);}
+  
+  
+</script>
