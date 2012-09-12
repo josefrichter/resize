@@ -1,4 +1,4 @@
-<form action="submit" method="post" accept-charset="utf-8" enctype="multipart/form-data">
+<form id="form" action="submit" method="post" accept-charset="utf-8" enctype="multipart/form-data">
   <input id="fileinput" type="file" name="file[]" multiple/>
   <input type="submit" value="Upload &rarr;">
 </form>
@@ -10,7 +10,8 @@
       var preview = document.getElementById('preview');
       var fileinput = document.getElementById('fileinput');
       var canvas = document.getElementById('canvas');
-      var formData = new FormData();
+      var form = document.getElementById('form');
+      //var formData = new FormData();
       
       function processfile(file) {
           var reader = new FileReader();
@@ -18,9 +19,12 @@
             var image = new Image();
             image.src = event.target.result;
             //preview.appendChild(image); // preview commented out, I am using the canvas instead
-            // I need the image object from reader into the canvas
-            resized = resizeMe(image); // TODO add this to formData
-            formData.append('file', resized);
+            resized = resizeMe(image);
+            var newinput = document.createElement("input");
+            newinput.type = 'hidden'
+            newinput.name = 'images[]'
+            newinput.value = resized;
+            form.appendChild(newinput);
           };
 
           reader.readAsDataURL(file); // I am actually not using this at all now
@@ -30,9 +34,7 @@
           
           for (var i = 0; i < files.length; i++) {
             processfile(files[i]);
-            //formData.append('file', files[i]);
           }
-          console.log(formData); // FIXME empty :-P
       }
       
       fileinput.onchange = function(){
@@ -71,7 +73,7 @@
         
         preview.appendChild(canvas); // do the actual resized preview
         
-        return canvas.toDataURL("image/jpg");
+        return canvas.toDataURL("image/jpeg",0.7);
 
       }
       

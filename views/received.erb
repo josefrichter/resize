@@ -1,5 +1,3 @@
-<% names.each do |img| %>
-
-  <img src="/uploads/<%= img %>"/>
-
+<% params[:images].each do |img| %>
+  <img src="<%= img %>"/>
 <% end %>
