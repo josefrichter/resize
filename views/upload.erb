@@ -11,27 +11,28 @@
       var fileinput = document.getElementById('fileinput');
       var canvas = document.getElementById('canvas');
       var form = document.getElementById('form');
-      //var formData = new FormData();
       
       function processfile(file) {
+          
           var reader = new FileReader();
+          reader.readAsDataURL(file);
+          
           reader.onload = function (event) {
             var image = new Image();
             image.src = event.target.result;
             //preview.appendChild(image); // preview commented out, I am using the canvas instead
-            resized = resizeMe(image);
-            var newinput = document.createElement("input");
-            newinput.type = 'hidden'
-            newinput.name = 'images[]'
-            newinput.value = resized;
-            form.appendChild(newinput);
+            image.onload = function() {
+              resized = resizeMe(image);
+              var newinput = document.createElement("input");
+              newinput.type = 'hidden'
+              newinput.name = 'images[]'
+              newinput.value = resized;
+              form.appendChild(newinput);
+            }
           };
-
-          reader.readAsDataURL(file); // I am actually not using this at all now
       }
   
       function readfiles(files) {
-          
           for (var i = 0; i < files.length; i++) {
             processfile(files[i]);
           }
@@ -44,28 +45,26 @@
       // === RESIZE ====
       
       function resizeMe(img) {
-      
-        canvas = document.createElement('canvas');
-        var ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0);
+        
+        var canvas = document.createElement('canvas');
 
-        var MAX_WIDTH = 100;
-        var MAX_HEIGHT = 100;
+        var max_width = 100;
+        var max_height = 100;
         var width = img.width;
         var height = img.height;
 
         if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
+          if (width > max_width) {
+            height *= max_width / width;
+            width = max_width;
           }
         } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
+          if (height > max_height) {
+            width *= max_height / height;
+            height = max_height;
           }
         }
-
+        
         canvas.width = width;
         canvas.height = height;
         var ctx = canvas.getContext("2d");
