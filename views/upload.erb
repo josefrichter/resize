@@ -15,11 +15,18 @@
       function processfile(file) {
           
           var reader = new FileReader();
-          reader.readAsDataURL(file);
+          //reader.readAsDataURL(file);
+          reader.readAsArrayBuffer(file);
           
           reader.onload = function (event) {
+            console.log("reader.onload fired");
+            // blob stuff
+            var blob = new Blob([event.target.result]);
+            //var blobURL = window.URL.createObjectURL(blob);
+            var blobURL = window.webkitURL.createObjectURL(blob);
+            
             var image = new Image();
-            image.src = event.target.result;
+            image.src = blobURL;
             //preview.appendChild(image); // preview commented out, I am using the canvas instead
             image.onload = function() {
               resized = resizeMe(image);
