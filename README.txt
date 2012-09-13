@@ -11,6 +11,6 @@ Because people often upload 5MB big 3000x2000px PNGs that are then scaled down t
 5. display the canvas, ie. a preview of the image to be uploaded
 6. take the pic from canvas as JPEG in dataURI format
 7. send it to server
-8. save it on server side (not implemented yet)
+8. save it on server side
 
 (c) Josef Richter
