@@ -38,6 +38,8 @@ function readfiles(files) {
     for (var i = 0; i < files.length; i++) {
       processfile(files[i]);
     }
+    fileinput.value = ""; //remove the original files from fileinput
+    // TODO remove the previous hidden inputs if user selects other files
 }
 
 fileinput.onchange = function(){
