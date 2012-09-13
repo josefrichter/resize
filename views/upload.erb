@@ -19,11 +19,10 @@
           reader.readAsArrayBuffer(file);
           
           reader.onload = function (event) {
-            console.log("reader.onload fired");
             // blob stuff
             var blob = new Blob([event.target.result]);
-            //var blobURL = window.URL.createObjectURL(blob);
             var blobURL = window.webkitURL.createObjectURL(blob);
+            //var blobURL = window.webkitURL.createObjectURL(blob) || window.URL.createObjectURL(blob);
             
             var image = new Image();
             image.src = blobURL;
