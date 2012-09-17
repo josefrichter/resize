@@ -9,6 +9,12 @@ var canvas = document.getElementById('canvas');
 var form = document.getElementById('form');
 
 function processfile(file) {
+  
+    if( !( /image/i ).test( file.type ) )
+        {
+            alert( "File "+ file.name +" is not an image." );
+            return false;
+        }
 
     // read the files
     var reader = new FileReader();
@@ -17,8 +23,8 @@ function processfile(file) {
     reader.onload = function (event) {
       // blob stuff
       var blob = new Blob([event.target.result]); // create blob...
-      var blobURL = window.webkitURL.createObjectURL(blob); // and get it's URL
-      //var blobURL = window.webkitURL.createObjectURL(blob) || window.URL.createObjectURL(blob);
+      window.URL = window.URL || window.webkitURL;
+      var blobURL = window.URL.createObjectURL(blob); // and get it's URL
       
       // helper Image object
       var image = new Image();
@@ -37,6 +43,16 @@ function processfile(file) {
 }
 
 function readfiles(files) {
+  
+    // remove the existing canvases and hidden inputs if user re-selects new pics
+    var existinginputs = document.getElementsByName('images[]');
+    var existingcanvases = document.getElementsByTagName('canvas');
+    while (existinginputs.length > 0) { // it's a live list so removing the first element each time
+      // DOMNode.prototype.remove = function() {this.parentNode.removeChild(this);}
+      form.removeChild(existinginputs[0]);
+      preview.removeChild(existingcanvases[0]);
+    } 
+  
     for (var i = 0; i < files.length; i++) {
       processfile(files[i]); // process each file at once
     }
@@ -46,6 +62,10 @@ function readfiles(files) {
 
 // this is where it starts. event triggered when user selects files
 fileinput.onchange = function(){
+  if ( !( window.File && window.FileReader && window.FileList && window.Blob ) ) {
+    alert('The File APIs are not fully supported in this browser.');
+    return false;
+    }
   readfiles(fileinput.files);
 }
 
