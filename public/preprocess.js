@@ -55,109 +55,93 @@ function linearToImgCanvas(imgOutPut)
 // ==== Lanczos resizing ====
 
 //returns a function that calculates lanczos weight
-function lanczosCreate(lobes){
+function lanczosCreate(kernel){
   return function(x){
-    if (x > lobes) 
-      return 0;
-    x *= Math.PI;
-    if (Math.abs(x) < 1e-16) 
-      return 1
-    var xx = x / lobes;
-    return Math.sin(x) * Math.sin(xx) / x / xx;
+	if (x > kernel) 
+	  return 0;
+	x *= Math.PI;
+	if (Math.abs(x) < 1e-16) 
+	  return 1
+	var xx = x / kernel;
+	return Math.sin(x) * Math.sin(xx) / x / xx;
   }
 }
 
+function lancosCompute(linearImg, scale, kernel)
+{
+	
+	var w = ~~(linearImg.width*scale) + 1, h = ~~(linearImg.height*scale) + 1;
+	var linearOutput =  { data: {}, width: w, height: h, length : w*h*4};	
+	var lanczos = lanczosCreate(kernel);//lanczos3 if kernel === 3
+	
+	var rcp_ratio = 2 / scale;
+	var range2 = Math.ceil(scale * kernel / 2);
+	var cacheLanc = {};
+	var center = {};
+	var icenter = {};
+	
+	
+	var process= function(self, u){
+		center.x = (u + 0.5) * scale;
+		icenter.x = Math.floor(center.x);
+		for (var v = 0; v < linearOutput.height; v++) {
+			center.y = (v + 0.5) * scale;
+			icenter.y = Math.floor(center.y);
+			var a, r, g, b;
+			a = r = g = b = 0;
+			for (var i = icenter.x - range2; i <= icenter.x + range2; i++) {
+				if (i < 0 || i >= src.width) 
+					continue;
+				var f_x = Math.floor(1000 * Math.abs(i - center.x));
+				if (!cacheLanc[f_x]) 
+					cacheLanc[f_x] = {};
+				for (var j = icenter.y - range2; j <= icenter.y + range2; j++) {
+					if (j < 0 || j >= src.height) 
+						continue;
+					var f_y = Math.floor(1000 * Math.abs(j - center.y));
+					if (cacheLanc[f_x][f_y] == undefined) 
+						cacheLanc[f_x][f_y] = lanczos(Math.sqrt(Math.pow(f_x * rcp_ratio, 2) + Math.pow(f_y * rcp_ratio, 2)) / 1000);
+					weight = cacheLanc[f_x][f_y];
+					if (weight > 0) {
+						var idx = (j * src.width + i) * 4;
+						a += weight;
+						r += weight * src.data[idx];
+						g += weight * src.data[idx + 1];
+						b += weight * src.data[idx + 2];
+					}
+				}
+			}
+			var idx = (v * linearOutput.width + u) * 3;
+			linearOutput.data[idx] = r / a;
+			linearOutput.data[idx + 1] = g / a;
+			linearOutput.data[idx + 2] = b / a;
+		}
+
+		if (++u < linearOutput.width) 
+			process1(u);
+		return;
+	}
+	
+	process(0);
+	var x, y, yS, xS;
+	var scaleInv = 1 / scale;
+	for (y = 0; y < linearOutput.height; y++){
+		yS = y * scaleInv;
+		for (x = 0; x < linearOutput.width; x++){
+			xS = x * scaleInv;
+			linearOutput.data[(x + y*w)*4]     = bilinear_optimized(linearImg.data, xS, yS, 0, linearImg.width);
+			linearOutput.data[(x + y*w)*4 + 1] = bilinear_optimized(linearImg.data, xS, yS, 1, linearImg.width);
+			linearOutput.data[(x + y*w)*4 + 2] = bilinear_optimized(linearImg.data, xS, yS, 2, linearImg.width);
+			linearOutput.data[(x + y*w)*4 + 3] = bilinear_optimized(linearImg.data, xS, yS, 3, linearImg.width);
+		}
+	}
+	return linearOutput;
+}
 //elem: canvas element, img: image element, sx: scaled width, lobes: kernel radius
-function thumbnailer(elem, img, sx, lobes){ 
-  
-    this.canvas = elem;
-    elem.width = img.width;
-    elem.height = img.height;
-    elem.style.display = "none";
-    this.ctx = elem.getContext("2d");
-    //this.ctx.webkitImageSmoothingEnabled = false;
-    //this.ctx.mozImageSmoothingEnabled = false;
-    //console.log(this.ctx.webkitImageSmoothingEnabled);
-    this.ctx.drawImage(img, 0, 0);
-    this.img = img;
-    this.src = this.ctx.getImageData(0, 0, img.width, img.height);
-    this.dest = {
-        width: sx,
-        height: Math.round(img.height * sx / img.width),
-    };
-    this.dest.data = new Array(this.dest.width * this.dest.height * 3);
-    this.lanczos = lanczosCreate(lobes);
-    this.ratio = img.width / sx;
-    this.rcp_ratio = 2 / this.ratio;
-    this.range2 = Math.ceil(this.ratio * lobes / 2);
-    this.cacheLanc = {};
-    this.center = {};
-    this.icenter = {};
-    setTimeout(this.process1, 0, this, 0);
-    
+function thumbnailer(elem, img, sx, lobes){     
+    return linearToImgCanvas(lancosCompute(linearImg,  max_width / img.width, lobes));
 }
 
-thumbnailer.prototype.process1 = function(self, u){
-    self.center.x = (u + 0.5) * self.ratio;
-    self.icenter.x = Math.floor(self.center.x);
-    for (var v = 0; v < self.dest.height; v++) {
-        self.center.y = (v + 0.5) * self.ratio;
-        self.icenter.y = Math.floor(self.center.y);
-        var a, r, g, b;
-        a = r = g = b = 0;
-        for (var i = self.icenter.x - self.range2; i <= self.icenter.x + self.range2; i++) {
-            if (i < 0 || i >= self.src.width) 
-                continue;
-            var f_x = Math.floor(1000 * Math.abs(i - self.center.x));
-            if (!self.cacheLanc[f_x]) 
-                self.cacheLanc[f_x] = {};
-            for (var j = self.icenter.y - self.range2; j <= self.icenter.y + self.range2; j++) {
-                if (j < 0 || j >= self.src.height) 
-                    continue;
-                var f_y = Math.floor(1000 * Math.abs(j - self.center.y));
-                if (self.cacheLanc[f_x][f_y] == undefined) 
-                    self.cacheLanc[f_x][f_y] = self.lanczos(Math.sqrt(Math.pow(f_x * self.rcp_ratio, 2) + Math.pow(f_y * self.rcp_ratio, 2)) / 1000);
-                weight = self.cacheLanc[f_x][f_y];
-                if (weight > 0) {
-                    var idx = (j * self.src.width + i) * 4;
-                    a += weight;
-                    r += weight * self.src.data[idx];
-                    g += weight * self.src.data[idx + 1];
-                    b += weight * self.src.data[idx + 2];
-                }
-            }
-        }
-        var idx = (v * self.dest.width + u) * 3;
-        self.dest.data[idx] = r / a;
-        self.dest.data[idx + 1] = g / a;
-        self.dest.data[idx + 2] = b / a;
-    }
-
-    if (++u < self.dest.width) 
-        setTimeout(self.process1, 0, self, u);
-    else 
-        setTimeout(self.process2, 0, self);
-};
-
-thumbnailer.prototype.process2 = function(self){
-    self.canvas.width = self.dest.width;
-    self.canvas.height = self.dest.height;
-    //self.ctx.webkitImageSmoothingEnabled = false;
-    self.ctx.drawImage(self.img, 0, 0);
-    self.src = self.ctx.getImageData(0, 0, self.dest.width, self.dest.height);
-    var idx, idx2;
-    for (var i = 0; i < self.dest.width; i++) {
-        for (var j = 0; j < self.dest.height; j++) {
-            idx = (j * self.dest.width + i) * 3;
-            idx2 = (j * self.dest.width + i) * 4;
-            self.src.data[idx2] = self.dest.data[idx];
-            self.src.data[idx2 + 1] = self.dest.data[idx + 1];
-            self.src.data[idx2 + 2] = self.dest.data[idx + 2];
-        }
-    }
-    self.ctx.putImageData(self.src, 0, 0);
-    self.canvas.style.display = "block";
-}
 
 // ==== Lanczos resizing ====
 
@@ -199,9 +183,9 @@ function processfile(file) {
       image.onload = function() {
         // have to wait till it's loaded
         //resized = resizeMe(image); // send it to canvas
-        
-        var canvas = document.createElement("canvas");
-        new thumbnailer(canvas, image, max_width, 3);
+            
+  
+        var canvas = thumbnailer(image, max_width, 3);
 
         var resized = canvas.toDataURL("image/jpeg",1.0);
         preview.appendChild(canvas);
