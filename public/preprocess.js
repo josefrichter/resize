@@ -123,18 +123,6 @@ function lancosCompute(linearImg, scale, kernel)
 	}
 	
 	process(0);
-	var x, y, yS, xS;
-	var scaleInv = 1 / scale;
-	for (y = 0; y < linearOutput.height; y++){
-		yS = y * scaleInv;
-		for (x = 0; x < linearOutput.width; x++){
-			xS = x * scaleInv;
-			linearOutput.data[(x + y*w)*4]     = bilinear_optimized(linearImg.data, xS, yS, 0, linearImg.width);
-			linearOutput.data[(x + y*w)*4 + 1] = bilinear_optimized(linearImg.data, xS, yS, 1, linearImg.width);
-			linearOutput.data[(x + y*w)*4 + 2] = bilinear_optimized(linearImg.data, xS, yS, 2, linearImg.width);
-			linearOutput.data[(x + y*w)*4 + 3] = bilinear_optimized(linearImg.data, xS, yS, 3, linearImg.width);
-		}
-	}
 	return linearOutput;
 }
 //elem: canvas element, img: image element, sx: scaled width, lobes: kernel radius
