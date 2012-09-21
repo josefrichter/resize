@@ -71,63 +71,61 @@ function lancosCompute(linearImg, scale, kernel)
 {
 	
 	var w = ~~(linearImg.width*scale) + 1, h = ~~(linearImg.height*scale) + 1;
-	var linearOutput =  { data: {}, width: w, height: h, length : w*h*4};	
-	var lanczos = lanczosCreate(kernel);//lanczos3 if kernel === 3
+	var linearOutput =  { data: {}, width: w, height: h, length : w*h*4};
 	
+	var lanczos = lanczosCreate(kernel);//lanczos3 if kernel === 3	
 	var rcp_ratio = 2 / scale;
 	var range2 = Math.ceil(scale * kernel / 2);
 	var cacheLanc = {};
 	var center = {};
 	var icenter = {};
 	
-	
-	var process= function(self, u){
+	var u = 0;
+	while (++u < linearOutput.width) {
 		center.x = (u + 0.5) * scale;
 		icenter.x = Math.floor(center.x);
 		for (var v = 0; v < linearOutput.height; v++) {
 			center.y = (v + 0.5) * scale;
 			icenter.y = Math.floor(center.y);
-			var a, r, g, b;
-			a = r = g = b = 0;
+			var a, r, g, b, alpha;
+			a = r = g = b = alpha = 0;
 			for (var i = icenter.x - range2; i <= icenter.x + range2; i++) {
-				if (i < 0 || i >= src.width) 
+				if (i < 0 || i >= linearImg.width) 
 					continue;
 				var f_x = Math.floor(1000 * Math.abs(i - center.x));
 				if (!cacheLanc[f_x]) 
 					cacheLanc[f_x] = {};
 				for (var j = icenter.y - range2; j <= icenter.y + range2; j++) {
-					if (j < 0 || j >= src.height) 
+					if (j < 0 || j >= linearImg.height) 
 						continue;
 					var f_y = Math.floor(1000 * Math.abs(j - center.y));
 					if (cacheLanc[f_x][f_y] == undefined) 
 						cacheLanc[f_x][f_y] = lanczos(Math.sqrt(Math.pow(f_x * rcp_ratio, 2) + Math.pow(f_y * rcp_ratio, 2)) / 1000);
 					weight = cacheLanc[f_x][f_y];
 					if (weight > 0) {
-						var idx = (j * src.width + i) * 4;
+						var idx = (j * linearImg.width + i) * 4;
 						a += weight;
-						r += weight * src.data[idx];
-						g += weight * src.data[idx + 1];
-						b += weight * src.data[idx + 2];
+						r += weight * linearImg.data[idx];
+						g += weight * linearImg.data[idx + 1];
+						b += weight * linearImg.data[idx + 2];
+						alpha += weight * linearImg.data[idx + 3];
 					}
 				}
 			}
-			var idx = (v * linearOutput.width + u) * 3;
+			var idx = (v * linearOutput.width + u) * 4;
 			linearOutput.data[idx] = r / a;
 			linearOutput.data[idx + 1] = g / a;
 			linearOutput.data[idx + 2] = b / a;
+			linearOutput.data[idx + 3] = alpha / a;
 		}
-
-		if (++u < linearOutput.width) 
-			process1(u);
-		return;
 	}
 	
-	process(0);
 	return linearOutput;
 }
-//elem: canvas element, img: image element, sx: scaled width, lobes: kernel radius
-function thumbnailer(elem, img, sx, lobes){     
-    return linearToImgCanvas(lancosCompute(linearImg,  max_width / img.width, lobes));
+//elem:  img: image element, sx: scaled width, lobes: kernel radius
+function thumbnailer(img, sx, lobes){     
+	var linearImage = imgOrCanvasToLinear(img);
+    return linearToImgCanvas(lancosCompute(linearImage,  sx / img.width, lobes));
 }
 
 
@@ -243,7 +241,9 @@ function resizeMe(img) {
   canvas.height = height;
   var ctx = canvas.getContext("2d");
   ctx.drawImage(img, 0, 0, width, height);
-  
+   
+   canvas = thumbnailer(img, max_width, 3);
+
   preview.appendChild(canvas); // do the actual resized preview
   
   return canvas.toDataURL("image/jpeg",0.7); // get the data from canvas as 70% JPG (can be also PNG, etc.)
