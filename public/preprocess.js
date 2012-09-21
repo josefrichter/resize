@@ -1,3 +1,57 @@
+// ==== gamma correction ====
+
+var gamma        = 2.2;
+var gamma_invert = 1 / gamma;
+
+function imgOrCanvasToLinear(img)
+{
+    var inputImg, inputCtx, scaledCanvas;
+    if (!(img instanceof HTMLCanvasElement)){
+        inputImg = document.createElement('canvas');
+        inputImg.width = img.width;
+        inputImg.height = img.height;
+        inputCtx = inputImg.getContext('2d');
+        inputCtx.drawImage( img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
+    }
+    else{
+        inputImg = img;
+        inputCtx = inputImg.getContext('2d');
+    }
+    var inPixels = inputCtx.getImageData(0, 0, inputImg.width, inputImg.height).data;
+    // convert it to linear         
+    var len = img.height*img.width*4;
+    var linearInPixel = {};//new Float32Array(len),
+    var gamma        = 2.2
+
+    for (var pix = 0; pix < len; pix++)
+    {
+        linearInPixel[pix] = Math.pow(inPixels[pix], gamma);
+    }
+    return { data: linearInPixel, width: img.width, height: img.height, length : len};      
+}
+
+function linearToImgCanvas(imgOutPut)
+{
+    outputCanvas = document.createElement('canvas');
+    outputCanvas.width = imgOutPut.width;
+    outputCanvas.height = imgOutPut.height;
+    var outputCtx = outputCanvas.getContext('2d');
+    var outputPixels = outputCtx.getImageData( 0, 0, imgOutPut.width, imgOutPut.height );
+    var outputPixelsData = outputPixels.data;
+
+    for( var pix = 0; pix < imgOutPut.length; pix++ ) 
+    {
+        outputPixels.data[pix] = Math.pow(imgOutPut.data[pix], gamma_invert);
+    }
+    outputCtx.putImageData( outputPixels, 0, 0 );
+
+    return outputCanvas;
+}
+
+// ==== gamma correction ====
+
+
+
 // ==== Lanczos resizing ====
 
 //returns a function that calculates lanczos weight
@@ -15,6 +69,7 @@ function lanczosCreate(lobes){
 
 //elem: canvas element, img: image element, sx: scaled width, lobes: kernel radius
 function thumbnailer(elem, img, sx, lobes){ 
+  
     this.canvas = elem;
     elem.width = img.width;
     elem.height = img.height;
@@ -39,6 +94,7 @@ function thumbnailer(elem, img, sx, lobes){
     this.center = {};
     this.icenter = {};
     setTimeout(this.process1, 0, this, 0);
+    
 }
 
 thumbnailer.prototype.process1 = function(self, u){
@@ -82,6 +138,7 @@ thumbnailer.prototype.process1 = function(self, u){
     else 
         setTimeout(self.process2, 0, self);
 };
+
 thumbnailer.prototype.process2 = function(self){
     self.canvas.width = self.dest.width;
     self.canvas.height = self.dest.height;
@@ -137,6 +194,7 @@ function processfile(file) {
       // helper Image object
       var image = new Image();
       image.src = blobURL;
+      
       //preview.appendChild(image); // preview commented out, I am using the canvas instead
       image.onload = function() {
         // have to wait till it's loaded
@@ -144,6 +202,7 @@ function processfile(file) {
         
         var canvas = document.createElement("canvas");
         new thumbnailer(canvas, image, max_width, 3);
+
         var resized = canvas.toDataURL("image/jpeg",1.0);
         preview.appendChild(canvas);
         
