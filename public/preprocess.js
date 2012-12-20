@@ -5,7 +5,6 @@ var max_height = fileinput.getAttribute('data-maxheight');
 
 var preview = document.getElementById('preview');
 
-var canvas = document.getElementById('canvas');
 var form = document.getElementById('form');
 
 function processfile(file) {
