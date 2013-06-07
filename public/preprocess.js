@@ -5,7 +5,6 @@ var max_height = fileinput.getAttribute('data-maxheight');
 
 var preview = document.getElementById('preview');
 
-var canvas = document.getElementById('canvas');
 var form = document.getElementById('form');
 
 function processfile(file) {
@@ -32,10 +31,10 @@ function processfile(file) {
       //preview.appendChild(image); // preview commented out, I am using the canvas instead
       image.onload = function() {
         // have to wait till it's loaded
-        resized = resizeMe(image); // send it to canvas
+        var resized = resizeMe(image); // send it to canvas
         var newinput = document.createElement("input");
-        newinput.type = 'hidden'
-        newinput.name = 'images[]'
+        newinput.type = 'hidden';
+        newinput.name = 'images[]';
         newinput.value = resized; // put result from canvas into new hidden input
         form.appendChild(newinput);
       }
